@@ -6,6 +6,7 @@ import numpy as np
 from .util import read_image
 
 
+
 class VOCBboxDataset:
     """Bounding box dataset for PASCAL `VOC`_.
 

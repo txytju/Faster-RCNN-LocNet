@@ -47,10 +47,12 @@ class RegionProposalNetwork(nn.Module):
             proposal_creator_params=dict(),
     ):
         super(RegionProposalNetwork, self).__init__()
-        self.anchor_base = generate_anchor_base(
-            anchor_scales=anchor_scales, ratios=ratios)
+
+        # 在reshaped image的尺度上，以feature map上一个点对应的一个16*16的左上角点为原点，计算得到的所有anchorbox的角点的相对坐标
+        # 为了后边计算reshaped image上的所有anchor box做准备
+        self.anchor_base = generate_anchor_base(anchor_scales=anchor_scales, ratios=ratios)
         self.feat_stride = feat_stride
-        self.proposal_layer = ProposalCreator(self, **proposal_creator_params)
+        self.proposal_layer = ProposalCreator(self, **proposal_creator_params) # parent_model = instance of RegionProposalNetwork, and use other default parameters
         n_anchor = self.anchor_base.shape[0]
         self.conv1 = nn.Conv2d(in_channels, mid_channels, 3, 1, 1)
         self.score = nn.Conv2d(mid_channels, n_anchor * 2, 1, 1, 0)
@@ -82,55 +84,46 @@ class RegionProposalNetwork(nn.Module):
 
             This is a tuple of five following values.
 
-            * **rpn_locs**: Predicted bounding box offsets and scales for \
-                anchors. Its shape is :math:`(N, H W A, 4)`.
-            * **rpn_scores**:  Predicted foreground scores for \
-                anchors. Its shape is :math:`(N, H W A, 2)`.
-            * **rois**: A bounding box array containing coordinates of \
-                proposal boxes.  This is a concatenation of bounding box \
-                arrays from multiple images in the batch. \
-                Its shape is :math:`(R', 4)`. Given :math:`R_i` predicted \
-                bounding boxes from the :math:`i` th image, \
-                :math:`R' = \\sum _{i=1} ^ N R_i`.
-            * **roi_indices**: An array containing indices of images to \
-                which RoIs correspond to. Its shape is :math:`(R',)`.
-            * **anchor**: Coordinates of enumerated shifted anchors. \
-                Its shape is :math:`(H W A, 4)`.
+            * **rpn_locs**: Predicted bounding box offsets and scales for anchors. Its shape is :math:`(N, H W A, 4)`.
+            * **rpn_scores**:  Predicted foreground scores for anchors. Its shape is :math:`(N, H W A, 2)`.
+            * **rois**: A bounding box array containing coordinates of proposal boxes.  This is a concatenation of bounding box \
+                arrays from multiple images in the batch. Its shape is :math:`(R', 4)`. Given :math:`R_i` predicted \
+                bounding boxes from the :math:`i` th image, :math:`R' = \\sum _{i=1} ^ N R_i`.
+            * **roi_indices**: An array containing indices of images to which RoIs correspond to. Its shape is :math:`(R',)`.
+            * **anchor**: Coordinates of enumerated shifted anchors. Its shape is :math:`(H W A, 4)`.
 
         """
-        n, _, hh, ww = x.shape
-        anchor = _enumerate_shifted_anchor(
-            np.array(self.anchor_base),
-            self.feat_stride, hh, ww)
+        n, _, hh, ww = x.shape  # n is always 1 here.
 
-        n_anchor = anchor.shape[0] // (hh * ww)
+        # reshaped image中的所有anchor box, shape (hh*ww*n_anchor, 4)
+        anchor = _enumerate_shifted_anchor(np.array(self.anchor_base),
+                                           self.feat_stride, hh, ww)
+
+        n_anchor = anchor.shape[0] // (hh * ww)  # feature map中每一个点上的anchor box数量
         h = F.relu(self.conv1(x))
 
         rpn_locs = self.loc(h)
-        # UNNOTE: check whether need contiguous
-        # A: Yes
-        rpn_locs = rpn_locs.permute(0, 2, 3, 1).contiguous().view(n, -1, 4)
+        rpn_locs = rpn_locs.permute(0, 2, 3, 1).contiguous().view(n, -1, 4)   # shape (n, hh*ww*n_anchor, 4)
+        
         rpn_scores = self.score(h)
         rpn_scores = rpn_scores.permute(0, 2, 3, 1).contiguous()
-        rpn_fg_scores = \
-            rpn_scores.view(n, hh, ww, n_anchor, 2)[:, :, :, :, 1].contiguous()
-        rpn_fg_scores = rpn_fg_scores.view(n, -1)
-        rpn_scores = rpn_scores.view(n, -1, 2)
+        rpn_fg_scores = rpn_scores.view(n, hh, ww, n_anchor, 2)[:, :, :, :, 1].contiguous() # 该anchor是前景的概率
+        rpn_fg_scores = rpn_fg_scores.view(n, -1)    # shape (n, hh*ww*n_anchor)
+        rpn_scores = rpn_scores.view(n, -1, 2)       # shape (n, hh*ww*n_anchor, 2)
 
         rois = list()
         roi_indices = list()
         for i in range(n):
-            roi = self.proposal_layer(
-                rpn_locs[i].cpu().data.numpy(),
-                rpn_fg_scores[i].cpu().data.numpy(),
-                anchor, img_size,
-                scale=scale)
+            roi = self.proposal_layer(rpn_locs[i].cpu().data.numpy(),
+                                      rpn_fg_scores[i].cpu().data.numpy(),
+                                      anchor, img_size,
+                                      scale=scale)
             batch_index = i * np.ones((len(roi),), dtype=np.int32)
             rois.append(roi)
             roi_indices.append(batch_index)
 
-        rois = np.concatenate(rois, axis=0)
-        roi_indices = np.concatenate(roi_indices, axis=0)
+        rois = np.concatenate(rois, axis=0)                 # shape (num_rois, 4)
+        roi_indices = np.concatenate(roi_indices, axis=0)   # shape (num_rois,)
         return rpn_locs, rpn_scores, rois, roi_indices, anchor
 
 

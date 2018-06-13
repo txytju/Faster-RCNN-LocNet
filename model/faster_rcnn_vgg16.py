@@ -10,16 +10,32 @@ from utils.config import opt
 
 def decom_vgg16():
     # the 30th layer of features is relu of conv5_3
+
+    # use either caffe or pytorch pretrained model
     if opt.caffe_pretrain:
         model = vgg16(pretrained=False)
         if not opt.load_path:
             model.load_state_dict(t.load(opt.caffe_pretrain_path))
     else:
-        model = vgg16(not opt.load_path)
+        model = vgg16(not opt.load_path)  # use pretrained torchvision vgg net
 
     features = list(model.features)[:30]
-    classifier = model.classifier
+    
+    # get the classification layer and drop some of them, leave the rest for use
 
+    # classifier defined in pytorch source code.
+    #     self.classifier = nn.Sequential(
+    # 0    nn.Linear(512 * 7 * 7, 4096),
+    # 1    nn.ReLU(True),
+    # 2    nn.Dropout(),
+    # 3    nn.Linear(4096, 4096),
+    # 4    nn.ReLU(True),
+    # 5    nn.Dropout(),
+    # 6    nn.Linear(4096, num_classes),
+    # )
+    # only two linear and two ReLU layers are kept for classifier.
+
+    classifier = model.classifier
     classifier = list(classifier)
     del classifier[6]
     if not opt.use_drop:
@@ -51,6 +67,7 @@ class FasterRCNNVGG16(FasterRCNN):
 
     """
 
+
     feat_stride = 16  # downsample 16x for output of conv5 in vgg16
 
     def __init__(self,
@@ -58,7 +75,8 @@ class FasterRCNNVGG16(FasterRCNN):
                  ratios=[0.5, 1, 2],
                  anchor_scales=[8, 16, 32]
                  ):
-                 
+        # extractor is for base net of faster rcnn and classifier is for the final ROIHead part.
+        # These are just some layers, not values.         
         extractor, classifier = decom_vgg16()
 
         rpn = RegionProposalNetwork(
@@ -111,7 +129,7 @@ class VGG16RoIHead(nn.Module):
         self.n_class = n_class
         self.roi_size = roi_size
         self.spatial_scale = spatial_scale
-        self.roi = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale)
+        self.roi = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale)  # roi shape of (N, C, outh, outw)
 
     def forward(self, x, rois, roi_indices):
         """Forward the chain.
@@ -119,7 +137,7 @@ class VGG16RoIHead(nn.Module):
         We assume that there are :math:`N` batches.
 
         Args:
-            x (Variable): 4D image variable.
+            x (Variable): 4D image variable. (batch_size, channels, width, height)
             rois (Tensor): A bounding box array containing coordinates of
                 proposal boxes.  This is a concatenation of bounding box
                 arrays from multiple images in the batch.
@@ -132,14 +150,14 @@ class VGG16RoIHead(nn.Module):
         """
         # in case roi_indices is  ndarray
         roi_indices = at.totensor(roi_indices).float()
-        rois = at.totensor(rois).float()
+        rois = at.totensor(rois).float()        
         indices_and_rois = t.cat([roi_indices[:, None], rois], dim=1)
         # NOTE: important: yx->xy
         xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
-        indices_and_rois = t.autograd.Variable(xy_indices_and_rois.contiguous())
+        indices_and_rois = t.autograd.Variable(xy_indices_and_rois.contiguous()) # [index, x1, y1, x2, y2] now
 
-        pool = self.roi(x, indices_and_rois)
-        pool = pool.view(pool.size(0), -1)
+        pool = self.roi(x, indices_and_rois) # get all the ROI pooling, shape of (N, C, outh, outw)
+        pool = pool.view(pool.size(0), -1)   # shape of shape of (N, C * outh * outw) where C=512
         fc7 = self.classifier(pool)
         roi_cls_locs = self.cls_loc(fc7)
         roi_scores = self.score(fc7)

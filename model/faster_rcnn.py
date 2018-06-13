@@ -120,11 +120,11 @@ class FasterRCNN(nn.Module):
         img_size = x.shape[2:]
 
         h = self.extractor(x)
-        rpn_locs, rpn_scores, rois, roi_indices, anchor = \
-            self.rpn(h, img_size, scale)
-        roi_cls_locs, roi_scores = self.head(
-            h, rois, roi_indices)
+        rpn_locs, rpn_scores, rois, roi_indices, anchor = self.rpn(h, img_size, scale)
+        roi_cls_locs, roi_scores = self.head(h, rois, roi_indices)
         return roi_cls_locs, roi_scores, rois, roi_indices
+
+
 
     def use_preset(self, preset):
         """Use the given preset during prediction.
@@ -153,6 +153,8 @@ class FasterRCNN(nn.Module):
         else:
             raise ValueError('preset must be visualize or evaluate')
 
+
+
     def _suppress(self, raw_cls_bbox, raw_prob):
         bbox = list()
         label = list()
@@ -175,6 +177,8 @@ class FasterRCNN(nn.Module):
         label = np.concatenate(label, axis=0).astype(np.int32)
         score = np.concatenate(score, axis=0).astype(np.float32)
         return bbox, label, score
+
+
 
     def predict(self, imgs,sizes=None,visualize=False):
         """Detect objects from images.
@@ -267,6 +271,8 @@ class FasterRCNN(nn.Module):
         """
         lr = opt.lr
         params = []
+
+        # different learning rate for different parameters
         for key, value in dict(self.named_parameters()).items():
             if value.requires_grad:
                 if 'bias' in key:

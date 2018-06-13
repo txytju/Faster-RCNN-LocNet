@@ -65,6 +65,7 @@ def preprocess(img, min_size=600, max_size=1000):
     img = sktsf.resize(img, (C, H * scale, W * scale), mode='reflect')
     # both the longer and shorter should be less than
     # max_size and min_size
+    
     if opt.caffe_pretrain:
         normalize = caffe_normalize
     else:
@@ -73,6 +74,9 @@ def preprocess(img, min_size=600, max_size=1000):
 
 
 class Transform(object):
+    '''
+    This is a self-defined transform class.
+    '''
 
     def __init__(self, min_size=600, max_size=1000):
         self.min_size = min_size

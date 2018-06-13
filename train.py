@@ -67,7 +67,9 @@ def train(**kwargs):
     # model and trainer
     faster_rcnn = FasterRCNNVGG16()
     print('model construct completed')
+
     trainer = FasterRCNNTrainer(faster_rcnn).cuda()
+
     if opt.load_path:
         trainer.load(opt.load_path)
         print('load pretrained model from %s' % opt.load_path)
@@ -81,7 +83,11 @@ def train(**kwargs):
             scale = at.scalar(scale)
             img, bbox, label = img.cuda().float(), bbox_.cuda(), label_.cuda()
             img, bbox, label = Variable(img), Variable(bbox), Variable(label)
+            
+            # all the input data for one training are : img, bbox, label, scale
             trainer.train_step(img, bbox, label, scale)
+            # training code stop here.
+
 
             if (ii + 1) % opt.plot_every == 0:
                 if os.path.exists(opt.debug_file):
@@ -109,6 +115,7 @@ def train(**kwargs):
                 trainer.vis.text(str(trainer.rpn_cm.value().tolist()), win='rpn_cm')
                 # roi confusion matrix
                 trainer.vis.img('roi_cm', at.totensor(trainer.roi_cm.conf, False).float())
+        
         eval_result = eval(test_dataloader, faster_rcnn, test_num=opt.test_num)
 
         if eval_result['map'] > best_map:

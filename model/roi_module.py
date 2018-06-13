@@ -8,6 +8,7 @@ from torch.autograd import Function
 
 from model.utils.roi_cupy import kernel_backward, kernel_forward
 
+
 Stream = namedtuple('Stream', ['ptr'])
 
 
