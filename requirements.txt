@@ -1,5 +1,5 @@
 visdom
-torchvision
+# torchvision
 scikit-image
 tqdm
 fire
