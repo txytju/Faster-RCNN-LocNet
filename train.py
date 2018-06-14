@@ -121,6 +121,8 @@ def train(**kwargs):
         # use the test dataset to eval
         eval_result = eval(test_dataloader, faster_rcnn, test_num=opt.test_num)
 
+        print(eval_result)
+
         # if eval_result['map'] > best_map:
         if True :
             best_map = eval_result['map']
