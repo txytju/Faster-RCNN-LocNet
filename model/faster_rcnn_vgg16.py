@@ -1,5 +1,6 @@
 import torch as t
 from torch import nn
+import torch.nn.functional as F
 from torchvision.models import vgg16
 from model.region_proposal_network import RegionProposalNetwork
 from model.faster_rcnn import FasterRCNN
@@ -90,8 +91,9 @@ class FasterRCNNVGG16(FasterRCNN):
             n_class=n_fg_class + 1,
             roi_size=7,
             spatial_scale=(1. / self.feat_stride),
+            M=28,
             classifier=classifier
-        )
+        )   
 
         super(FasterRCNNVGG16, self).__init__(
             extractor,
@@ -114,24 +116,40 @@ class VGG16RoIHead(nn.Module):
 
     """
 
-    def __init__(self, n_class, roi_size, spatial_scale,
+    def __init__(self, n_class, roi_size, spatial_scale, M,
                  classifier):
         # n_class includes the background
         super(VGG16RoIHead, self).__init__()
 
-        self.classifier = classifier
-        self.cls_loc = nn.Linear(4096, n_class * 4)
-        self.score = nn.Linear(4096, n_class)
-
-        normal_init(self.cls_loc, 0, 0.001)
-        normal_init(self.score, 0, 0.01)
-
         self.n_class = n_class
         self.roi_size = roi_size
         self.spatial_scale = spatial_scale
-        self.roi = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale)  # roi shape of (N, C, outh, outw)
+        self.M = M
 
-    def forward(self, x, rois, roi_indices):
+
+        # branch_1
+        self.roi_1 = RoIPooling2D(self.roi_size, self.roi_size, self.spatial_scale)     # roi shape of (N, C, outh, outw)
+        self.classifier = classifier
+        self.score = nn.Linear(4096, n_class)
+  
+        # branch_2
+        self.roi_2 = RoIPooling2D(self.roi_size*2, self.roi_size*2, self.spatial_scale) # roi shape of (N, C, outh*2, outw*2)
+        self.conv_21 = nn.ConV2d(512, 512, (3,3))
+        self.conv_22 = nn.ConV2d(512, 512, (3,3))  # output shape (1, 512, 14, 14)
+        self.max_x = nn.MaxPool2d((14,1))         # output shape (1, 512, 1, 14)
+        self.max_y = nn.MaxPool2d((1,14))         # output shape (1, 512, 14, 1)
+        self.fc_x = nn.Linear(7168, M)
+        self.fc_y = nn.Linear(7168, M)
+
+
+        normal_init(self.score, 0, 0.01)
+        normal_init(self.conv_21, 0, 0.001)
+        normal_init(self.conv_22, 0, 0.001)
+        normal_init(self.fc_x, 0, 0.001)
+        normal_init(self.fc_y, 0, 0.001)
+
+
+    def forward(self, x, rois, seach_regions, roi_indices):
         """Forward the chain.
 
         We assume that there are :math:`N` batches.
@@ -149,19 +167,40 @@ class VGG16RoIHead(nn.Module):
 
         """
         # in case roi_indices is  ndarray
+        
         roi_indices = at.totensor(roi_indices).float()
+        
         rois = at.totensor(rois).float()        
         indices_and_rois = t.cat([roi_indices[:, None], rois], dim=1)
         # NOTE: important: yx->xy
         xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
         indices_and_rois = t.autograd.Variable(xy_indices_and_rois.contiguous()) # [index, x1, y1, x2, y2] now
 
-        pool = self.roi(x, indices_and_rois) # get all the ROI pooling, shape of (N, C, outh, outw)
-        pool = pool.view(pool.size(0), -1)   # shape of shape of (N, C * outh * outw) where C=512
-        fc7 = self.classifier(pool)
-        roi_cls_locs = self.cls_loc(fc7)
+        seach_regions = at.totensor(seach_regions).float()  
+        indices_and_search_regions = t.cat([roi_indices[:, None], seach_regions], dim=1)
+        # NOTE: important: yx->xy
+        xy_indices_and_search_regions = indices_and_search_regions[:, [0, 2, 1, 4, 3]]
+        indices_and_search_regions = t.autograd.Variable(xy_indices_and_search_regions.contiguous()) # [index, x1, y1, x2, y2] now
+
+        # branch_1
+        pool_1 = self.roi_1(x, indices_and_rois) # get all the ROI pooling, shape of (N, C, outh, outw)
+        pool_1 = pool.view(pool_1.size(0), -1)   # shape of shape of (N, C * outh * outw) where C=512    
+        fc7 = self.classifier(pool_1)
         roi_scores = self.score(fc7)
-        return roi_cls_locs, roi_scores
+
+        # branch_2
+        pool_2 = self.roi_2(x, indices_and_search_regions)
+        conv_1 = self.conv21(pool_2)
+        conv_2 = self.conv22(conv_1)
+
+        max_x_ = self.max_x(conv_2)
+        max_y_ = self.max_y(conv_2)
+        max_x_ = max_x_.view(max_x_.size(0), -1)
+        max_y_ = max_y_.view(max_y_.size(0), -1)
+        px = F.sigmoid(self.fc_x(max_x_))
+        py = F.sigmoid(self.fc_y(max_y_))
+
+        return (px, py), roi_scores
 
 
 def normal_init(m, mean, stddev, truncated=False):

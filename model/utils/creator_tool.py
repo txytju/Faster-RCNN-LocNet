@@ -1,12 +1,16 @@
 import numpy as np
 import cupy as cp
 
-from model.utils.bbox_tools import bbox2loc, bbox_iou, loc2bbox
+from model.utils.bbox_tools import bbox2loc, bbox_iou, loc2bbox, bbox2T
 from model.utils.nms import non_maximum_suppression
 
 
 class ProposalTargetCreator(object):
-    """Assign ground truth bounding boxes to given RoIs.
+    """
+    When using LocNet to improve Fast RCNN, you need to change this class \
+    to generate ground truth label in different forms.
+    
+    Assign ground truth bounding boxes to given RoIs.
 
     The :meth:`__call__` of this class generates training targets
     for each object proposal.
@@ -18,13 +22,10 @@ class ProposalTargetCreator(object):
 
     Args:
         n_sample (int): The number of sampled regions.
-        pos_ratio (float): Fraction of regions that is labeled as a
-            foreground.
-        pos_iou_thresh (float): IoU threshold for a RoI to be considered as a
-            foreground.
-        neg_iou_thresh_hi (float): RoI is considered to be the background
-            if IoU is in
-            [:obj:`neg_iou_thresh_hi`, :obj:`neg_iou_thresh_hi`).
+        pos_ratio (float): Fraction of regions that is labeled as a foreground.
+        pos_iou_thresh (float): IoU threshold for a RoI to be considered as a foreground.
+        neg_iou_thresh_hi (float): RoI is considered to be the background if IoU is in
+            [:obj:`neg_iou_thresh_lo`, :obj:`neg_iou_thresh_hi`).
         neg_iou_thresh_lo (float): See above.
 
     """
@@ -40,7 +41,7 @@ class ProposalTargetCreator(object):
         self.neg_iou_thresh_hi = neg_iou_thresh_hi
         self.neg_iou_thresh_lo = neg_iou_thresh_lo  # NOTE: py-faster-rcnn默认的值是0.1
 
-    def __call__(self, roi, bbox, label,
+    def __call__(self, roi, search_region, bbox, label,
                  loc_normalize_mean=(0., 0., 0., 0.),
                  loc_normalize_std=(0.1, 0.1, 0.2, 0.2)):
         """Assigns ground truth to sampled proposals.
@@ -81,21 +82,27 @@ class ProposalTargetCreator(object):
 
             * **sample_roi**: Regions of interests that are sampled. \
                 Its shape is :math:`(S, 4)`.
-            * **gt_roi_loc**: Offsets and scales to match \
-                the sampled RoIs to the ground truth bounding boxes. \
+            * **sample_search_region**: Search_region that are sampled. \
                 Its shape is :math:`(S, 4)`.
             * **gt_roi_label**: Labels assigned to sampled RoIs. Its shape is \
                 :math:`(S,)`. Its range is :math:`[0, L]`. The label with \
                 value 0 is the background.
+            
+            # * **gt_roi_loc**: Offsets and scales to match \
+            #     the sampled RoIs to the ground truth bounding boxes. \
+            #     Its shape is :math:`(S, 4)`.
+
 
         """
+
         n_bbox, _ = bbox.shape
 
-        roi = np.concatenate((roi, bbox), axis=0)
+        # roi shape (N,4) , bbox shape (M,4), so the new iou shape is (N+M,4)
+        roi = np.concatenate((roi, bbox), axis=0) # 为什么把 roi 和 bbox 连起来了
 
-        pos_roi_per_image = np.round(self.n_sample * self.pos_ratio)
-        iou = bbox_iou(roi, bbox)
-        gt_assignment = iou.argmax(axis=1)
+        pos_roi_per_image = np.round(self.n_sample * self.pos_ratio) # 正样本的数量
+        iou = bbox_iou(roi, bbox) #  iou shape is (N+M, M)
+        gt_assignment = iou.argmax(axis=1)  # 含义是把某一个 roi 分配给了哪一个 bbox
         max_iou = iou.max(axis=1)
         # Offset range of classes from [0, n_fg_class - 1] to [1, n_fg_class].
         # The label with value 0 is the background.
@@ -121,16 +128,27 @@ class ProposalTargetCreator(object):
 
         # The indices that we're selecting (both positive and negative).
         keep_index = np.append(pos_index, neg_index)
+
         gt_roi_label = gt_roi_label[keep_index]
         gt_roi_label[pos_roi_per_this_image:] = 0  # negative labels --> 0
+        
+
         sample_roi = roi[keep_index]
+        sample_search_region = search_region[keep_index]
+
+        # use search region and bbox to generate Tx and Ty
+        # sample_roi 和 sample_bboxes 是一一对应的
+        # 当然这里可能出现一个 bbox 对应了多个 sample_roi 的情况
+        # sample_bboxes shape (S,4)
+        sample_bbox = bbox[gt_assignment[keep_index]]
+        Tx, Ty = bbox2T(sample_search_region, sample_bbox)
 
         # Compute offsets and scales to match sampled RoIs to the GTs.
-        gt_roi_loc = bbox2loc(sample_roi, bbox[gt_assignment[keep_index]])
-        gt_roi_loc = ((gt_roi_loc - np.array(loc_normalize_mean, np.float32)
-                       ) / np.array(loc_normalize_std, np.float32))
+        # gt_roi_loc = bbox2loc(sample_roi, bbox[gt_assignment[keep_index]])
+        # gt_roi_loc = ((gt_roi_loc - np.array(loc_normalize_mean, np.float32)
+        #                ) / np.array(loc_normalize_std, np.float32))
 
-        return sample_roi, gt_roi_loc, gt_roi_label
+        return sample_roi, sample_search_region, (Tx,Ty), gt_roi_label
 
 
 class AnchorTargetCreator(object):
@@ -289,7 +307,10 @@ def _get_inside_index(anchor, H, W):
 
 
 class ProposalCreator:
-    """Proposal regions are generated by calling this object.
+    """
+    Changed : search_regions are also generated by call this object.
+
+    Proposal regions are generated by calling this object.
 
     The :meth:`__call__` of this object outputs object detection proposals by
     applying estimated bounding box offsets to a set of anchors.
@@ -398,12 +419,23 @@ class ProposalCreator:
         # roi = loc2bbox(anchor, loc)
         # 使用 anchor 和 loc 来计算rpn预测的box的具体坐标
         # roi shape (R, 4)
+        # roi : (ymin, xmin, ymax, xmax)
         roi = loc2bbox(anchor, loc) 
+
+        # generate search_region using roi
+        search_region = generate_search_region(roi)
+
+
 
         # Clip predicted boxes to image. 
         # 使用reshaped image的上下左右边来裁剪 roi，使得roi都在reshaped image里边
         roi[:, slice(0, 4, 2)] = np.clip(roi[:, slice(0, 4, 2)], 0, img_size[0])
         roi[:, slice(1, 4, 2)] = np.clip(roi[:, slice(1, 4, 2)], 0, img_size[1])
+
+        # 使用reshaped image的上下左右边来裁剪 search_region，使得search_region都在reshaped image里边
+        search_region[:, slice(0, 4, 2)] = np.clip(search_region[:, slice(0, 4, 2)], 0, img_size[0])
+        search_region[:, slice(1, 4, 2)] = np.clip(search_region[:, slice(1, 4, 2)], 0, img_size[1])
+
 
         # Remove predicted boxes with either height or width < threshold.
         min_size = self.min_size * scale
@@ -411,6 +443,7 @@ class ProposalCreator:
         ws = roi[:, 3] - roi[:, 1]
         keep = np.where((hs >= min_size) & (ws >= min_size))[0]
         roi = roi[keep, :]
+        search_region = search_region[keep, :]
         score = score[keep]
 
         # Sort all (proposal, score) pairs by score from highest to lowest.
@@ -419,6 +452,7 @@ class ProposalCreator:
         if n_pre_nms > 0:
             order = order[:n_pre_nms]
         roi = roi[order, :]
+        search_region = search_region[order, :]
 
         # Apply nms (e.g. threshold = 0.7).
         # Take after_nms_topN (e.g. 300).
@@ -429,5 +463,34 @@ class ProposalCreator:
                                        thresh=self.nms_thresh)
         if n_post_nms > 0:
             keep = keep[:n_post_nms]
+        
         roi = roi[keep]
-        return roi
+        search_region = search_region[keep]
+        
+        return roi, search_region
+
+
+def generate_search_region(roi, Sh=1.2, Sw=1.2):
+
+    search_region = np.zeros(roi.shape)
+
+    for i in range(roi.shape[0]):
+        ymin_roi, xmin_roi, ymax_roi, xmax_roi = roi[i,:]
+        y_center = (ymin_roi + ymax_roi)/2
+        x_center = (xmin_roi + xmax_roi)/2
+        
+        height_roi = ymax_roi - ymin_roi
+        width_roi = xmax_roi - xmin_roi
+        
+        # search region parameters
+        height_s = height_roi * Sh
+        width_s = width_roi * Sw
+
+        ymin_s = y_center - height_s/2
+        ymax_s = y_center + height_s/2
+        xmin_s = x_center - width_s/2
+        xmax_s = x_center + width_s/2
+
+        search_region[i,:] = ymin_s, xmin_s, ymax_s, xmax_s
+
+        return search_region

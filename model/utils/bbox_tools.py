@@ -4,6 +4,100 @@ import numpy as xp
 import six
 from six import __init__
 
+def bbox_intersection(box_a, box_b):
+    '''
+    Args:
+        box_a (array): A array of coordinates of a box.
+            Its shape is :math:`(4,)`. These coordinates are
+            :math:`ymin, xmin, ymax, xmax`.
+        box_b (array): A array of coordinates of a box.
+            Its shape is :math:`(4,)`. These coordinates are
+            :math:`ymin, xmin, ymax, xmax`.
+    
+    Return:
+        intersection (array): A array of coordinates of the intersection box.
+            Its shape is :math:`(4,)`. These coordinates are
+            :math:`ymin, xmin, ymax, xmax`.
+    '''
+    y_min_a, x_min_a, y_max_a, x_max_a = box_a
+    y_min_b, x_min_b, y_max_b, x_max_b = box_b
+
+    left = max(x_min_a, x_min_b)
+    right = min(x_max_a, x_max_b)
+    bottom = max(y_min_a, y_min_b)
+    top = min(y_max_a, y_max_b)
+
+    # 两个 box 没有交集
+    if right<left or top<bottom :
+        return np.array([0, 0, 0, 0])
+    # 两个 box 有交集，就返回交集的矩形 (ymin, xmin, ymax, xmax)
+    else :
+        return np.array([bottom, left, top, right])
+
+
+def bbox2T(search_regions, bboxes, M=28):
+    '''
+    Encodes the bboxes to Tx and Ty.
+
+    Args:
+        search_regions (array): A array of coordinates of search_region.
+            Its shape is :math:`(S, 4)`. These coordinates are
+            :math:`ymin, xmin, ymax, xmax`.
+        bboxes (array): An array of bounding boxes.
+            Its shape is :math:`(S, 4)`. These coordinates are
+            :math:`ymin, xmin, ymax, xmax`.
+        M (int): Number of parts in x or y dorection.
+
+    Returns:
+        array:
+
+    '''
+    #  默认值是 -1
+    intersections = np.zeros(search_regions.shape)
+
+    for ii, search_region, bbox in enumerate(zip(search_regions, bboxes)):
+        intersection = bbox_intersection(search_region, bbox)
+
+        if intersection.any():
+            intersections[ii,:] = intersection
+    
+    Tx = np.zeros(search_regions.shape[0], M)
+    Ty = np.zeros(search_regions.shape[0], M)
+
+    for jj, search_region, intersection in enumerate(zip(search_regions, intersections)):
+        
+        if intersection.any():
+
+            ymin, xmin, ymax, xmax = search_region
+            bottom, left, top, right = intersection
+
+            # xmin~xmax段M等分，设等分尺寸为dx
+            # x在(left-dx, right+dx)的开区间内，对应的label就是1，否则是0   
+            dx = (xmax-xmin)/(M-1)
+            tx = []
+            for x in np.linspace(xmin, xmax, num=M):
+                if left-dx < x < right+dx:
+                    tx.append(1)
+                else:
+                    tx.append(0)
+
+            Tx[jj,:] = np.array(tx)
+            
+            # ymin~ymax段M等分，设等分尺寸为dy
+            # y在(bottom-dy, top+dy)的开区间内，对应的label就是1，否则是0 
+            dy = (ymax-ymin)/(M-1)
+            ty = []
+            for y in np.linspace(ymin, ymax, num=M):
+                if bottom-dy < y < top+dy:
+                    ty.append(1)
+                else:
+                    ty.append(0)
+
+            Ty[jj,:] = np.array(ty)
+
+    return Tx, Ty
+
+
 
 def loc2bbox(src_bbox, loc):
     """Decode bounding boxes from bounding box offsets and scales.

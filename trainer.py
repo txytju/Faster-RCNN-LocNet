@@ -94,10 +94,10 @@ class FasterRCNNTrainer(nn.Module):
         _, _, H, W = imgs.shape # should be (1,3,H,W)
         img_size = (H, W)
 
-        # need more feature maps here
+        # need more feature maps here when you are trying to use features of different scale
         features = self.faster_rcnn.extractor(imgs)
 
-        rpn_locs, rpn_scores, rois, roi_indices, anchor = self.faster_rcnn.rpn(features, img_size, scale)
+        rpn_locs, rpn_scores, rois, search_regions, roi_indices, anchor = self.faster_rcnn.rpn(features, img_size, scale)
 
         # Since batch size is one, convert variables to singular form
         # different parameters here :
@@ -109,20 +109,23 @@ class FasterRCNNTrainer(nn.Module):
         rpn_score = rpn_scores[0]  # shape (num_anchors,)
         rpn_loc = rpn_locs[0]      # shape (num_anchors, 4)
         roi = rois                 # shape (num_rois, 4)
+        search_region = search_regions  # shape (num_rois, 4)
 
         # Sample RoIs and forward
         # it's fine to break the computation graph of rois, 
         # consider them as constant input
-        sample_roi, gt_roi_loc, gt_roi_label = self.proposal_target_creator(roi,
-                                                                            at.tonumpy(bbox),
-                                                                            at.tonumpy(label),
-                                                                            self.loc_normalize_mean,
-                                                                            self.loc_normalize_std)
+        sample_roi, sample_search_region, (Tx,Ty), gt_roi_label = self.proposal_target_creator(roi,
+                                                                                              search_region,
+                                                                                              at.tonumpy(bbox),
+                                                                                              at.tonumpy(label),
+                                                                                              self.loc_normalize_mean,
+                                                                                              self.loc_normalize_std)
         # NOTE it's all zero because now it only support for batch=1 now
         sample_roi_index = t.zeros(len(sample_roi))
-        roi_cls_loc, roi_score = self.faster_rcnn.head(features,
-                                                       sample_roi,
-                                                       sample_roi_index)
+        (px, py), roi_score = self.faster_rcnn.head(features,
+                                                     sample_roi,
+                                                     sample_search_region,
+                                                     sample_roi_index)
 
         # ------------------ RPN losses -------------------#
         gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(at.tonumpy(bbox),
@@ -141,22 +144,33 @@ class FasterRCNNTrainer(nn.Module):
         _rpn_score = at.tonumpy(rpn_score)[at.tonumpy(gt_rpn_label) > -1]
         self.rpn_cm.add(at.totensor(_rpn_score, False), _gt_rpn_label.data.long())
 
+
+
         # ------------------ ROI losses (fast rcnn loss) -------------------#
-        n_sample = roi_cls_loc.shape[0]
-        roi_cls_loc = roi_cls_loc.view(n_sample, -1, 4)
-        roi_loc = roi_cls_loc[t.arange(0, n_sample).long().cuda(), at.totensor(gt_roi_label).long()]
+        n_sample = px.shape[0]
+        # (px, py) and (Tx, Ty) are to be used to caculate loss ：roi_loc_loss
+
+        Tx = at.tovariable(Tx)
+        Ty = at.tovariable(Ty)
+
+        roi_loc_loss = _LocNet_loss(Tx, Ty, Px, Py, gt_roi_label.data, roi_sigma)
+
+        # roi_cls_loc = roi_cls_loc.view(n_sample, -1, 4)
+        # roi_loc = roi_cls_loc[t.arange(0, n_sample).long().cuda(), at.totensor(gt_roi_label).long()]
+        
+        # roi_loc_loss = _fast_rcnn_loc_loss(
+        #     roi_loc.contiguous(),
+        #     gt_roi_loc,
+        #     gt_roi_label.data,
+        #     self.roi_sigma)
+        
         gt_roi_label = at.tovariable(gt_roi_label).long()
-        gt_roi_loc = at.tovariable(gt_roi_loc)
-
-        roi_loc_loss = _fast_rcnn_loc_loss(
-            roi_loc.contiguous(),
-            gt_roi_loc,
-            gt_roi_label.data,
-            self.roi_sigma)
-
         roi_cls_loss = nn.CrossEntropyLoss()(roi_score, gt_roi_label.cuda())
 
         self.roi_cm.add(at.totensor(roi_score, False), gt_roi_label.data.long())
+
+
+
 
         losses = [rpn_loc_loss, rpn_cls_loss, roi_loc_loss, roi_cls_loss]
         losses = losses + [sum(losses)]
@@ -252,3 +266,15 @@ def _fast_rcnn_loc_loss(pred_loc, gt_loc, gt_label, sigma):
     # Normalize by total number of negtive and positive rois.
     loc_loss /= (gt_label >= 0).sum().float()  # ignore gt_label==-1 for rpn_loss
     return loc_loss
+
+def _LocNet_loss(Tx, Ty, Px, Py, gt_label, sigma):
+    '''
+
+    '''
+
+    s = t.sum(Tx * t.log(Px)) + t.sum((1-Tx) * t.log(1-Px)) + t.sum(Ty * t.log(Py)) + t.sum((1-Ty) * t.log(1-Py))
+    
+    return s
+
+
+
