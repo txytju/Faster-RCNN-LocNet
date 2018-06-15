@@ -9,7 +9,7 @@ from pprint import pprint
 class Config:
     # data
     # voc_data_dir = '/home/cy/.chainer/dataset/pfnet/chainercv/voc/VOCdevkit/VOC2007/'
-    voc_data_dir = '/home/cvdev/Faster-RCNN-LocNet/VOCdevkit/VOC2007'
+    voc_data_dir = '/home/cvdev/Faster-RCNN-LocNet/VOCdevkit/VOC2007_traindev'
     min_size = 600  # image resize
     max_size = 1000 # image resize
     num_workers = 8
