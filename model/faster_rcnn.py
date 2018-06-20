@@ -167,13 +167,16 @@ class FasterRCNN(nn.Module):
             keep = non_maximum_suppression(
                 cp.array(cls_bbox_l), self.nms_thresh, prob_l)
             keep = cp.asnumpy(keep)
+            
             bbox.append(cls_bbox_l[keep])
             # The labels are in [0, self.n_class - 2].
             label.append((l - 1) * np.ones((len(keep),)))
             score.append(prob_l[keep])
+
         bbox = np.concatenate(bbox, axis=0).astype(np.float32)
         label = np.concatenate(label, axis=0).astype(np.int32)
         score = np.concatenate(score, axis=0).astype(np.float32)
+        
         return bbox, label, score
 
     def predict(self, imgs,sizes=None,visualize=False):
@@ -260,17 +263,17 @@ class FasterRCNN(nn.Module):
             # use px, py and search_regions to generate boxes
             cls_bbox = p2bbox(px, py, search_regions, threshold=0.3)
 
-            # print(cls_bbox.shape)
+            print(cls_bbox)
+            print(cls_bbox.shape)  # shape of (300, 4)
+  
+            print(roi_score)
+            print(roi_score.shape) # shape of (300, 21)
+
             
             # print(px.shape)
             # print(py.shape)
             # print(search_regions.shape)
 
-
-            # roi_cls_loc = roi_cls_loc.view(-1, self.n_class, 4)
-            # roi = roi.view(-1, 1, 4).expand_as(roi_cls_loc)
-            # cls_bbox = loc2bbox(at.tonumpy(roi).reshape((-1, 4)),
-            #                     at.tonumpy(roi_cls_loc).reshape((-1, 4)))
             
             cls_bbox = at.totensor(cls_bbox)
         
@@ -280,10 +283,18 @@ class FasterRCNN(nn.Module):
 
             prob = at.tonumpy(F.softmax(at.tovariable(roi_score), dim=1))
 
+            print(prob)
+            print(prob.shape)
+
             raw_cls_bbox = at.tonumpy(cls_bbox)
             raw_prob = at.tonumpy(prob)
 
-            bbox, label, score = self._suppress(raw_cls_bbox, raw_prob)
+
+            bbox, label, score = cls_bbox, 1, raw_prob
+            # bbox, label, score = self._suppress(raw_cls_bbox, raw_prob)
+
+
+
             bboxes.append(bbox)
             labels.append(label)
             scores.append(score)
