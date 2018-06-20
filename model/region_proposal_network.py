@@ -101,8 +101,13 @@ class RegionProposalNetwork(nn.Module):
 
         n_anchor = anchor.shape[0] // (hh * ww)  # feature map中每一个点上的anchor box数量
         h = F.relu(self.conv1(x))
-
+        
         rpn_locs = self.loc(h)
+
+        # print("x is ", x)
+        print("h is ", h)
+        print("rpn_locs is ", rpn_locs)
+
         rpn_locs = rpn_locs.permute(0, 2, 3, 1).contiguous().view(n, -1, 4)   # shape (n, hh*ww*n_anchor, 4)
         
         rpn_scores = self.score(h)

@@ -134,8 +134,8 @@ class VGG16RoIHead(nn.Module):
   
         # branch_2
         self.roi_2 = RoIPooling2D(self.roi_size*2, self.roi_size*2, self.spatial_scale) # roi shape of (N, C, outh*2, outw*2)
-        self.conv_21 = nn.ConV2d(512, 512, (3,3))
-        self.conv_22 = nn.ConV2d(512, 512, (3,3))  # output shape (1, 512, 14, 14)
+        self.conv_21 = nn.Conv2d(512, 512, (3,3), padding=1)
+        self.conv_22 = nn.Conv2d(512, 512, (3,3), padding=1)  # output shape (1, 512, 14, 14)
         self.max_x = nn.MaxPool2d((14,1))         # output shape (1, 512, 1, 14)
         self.max_y = nn.MaxPool2d((1,14))         # output shape (1, 512, 14, 1)
         self.fc_x = nn.Linear(7168, M)
@@ -184,15 +184,14 @@ class VGG16RoIHead(nn.Module):
 
         # branch_1
         pool_1 = self.roi_1(x, indices_and_rois) # get all the ROI pooling, shape of (N, C, outh, outw)
-        pool_1 = pool.view(pool_1.size(0), -1)   # shape of shape of (N, C * outh * outw) where C=512    
+        pool_1 = pool_1.view(pool_1.size(0), -1)   # shape of shape of (N, C * outh * outw) where C=512    
         fc7 = self.classifier(pool_1)
         roi_scores = self.score(fc7)
-
+  
         # branch_2
         pool_2 = self.roi_2(x, indices_and_search_regions)
-        conv_1 = self.conv21(pool_2)
-        conv_2 = self.conv22(conv_1)
-
+        conv_1 = self.conv_21(pool_2)
+        conv_2 = self.conv_22(conv_1)
         max_x_ = self.max_x(conv_2)
         max_y_ = self.max_y(conv_2)
         max_x_ = max_x_.view(max_x_.size(0), -1)

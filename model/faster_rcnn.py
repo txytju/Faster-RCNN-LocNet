@@ -3,7 +3,7 @@ import torch as t
 import numpy as np
 import cupy as cp
 from utils import array_tool as at
-from model.utils.bbox_tools import loc2bbox
+from model.utils.bbox_tools import loc2bbox, p2bbox
 from model.utils.nms import non_maximum_suppression
 
 from torch import nn
@@ -120,9 +120,9 @@ class FasterRCNN(nn.Module):
         img_size = x.shape[2:]
 
         h = self.extractor(x)
-        rpn_locs, rpn_scores, rois, roi_indices, anchor = self.rpn(h, img_size, scale)
-        roi_cls_locs, roi_scores = self.head(h, rois, roi_indices)
-        return roi_cls_locs, roi_scores, rois, roi_indices
+        rpn_locs, rpn_scores, rois, search_regions, roi_indices, anchor = self.rpn(h, img_size, scale)
+        (px, py), roi_scores = self.head(h, rois, search_regions, roi_indices)
+        return (px, py), roi_scores, rois, search_regions, roi_indices
 
 
 
@@ -153,8 +153,6 @@ class FasterRCNN(nn.Module):
         else:
             raise ValueError('preset must be visualize or evaluate')
 
-
-
     def _suppress(self, raw_cls_bbox, raw_prob):
         bbox = list()
         label = list()
@@ -177,8 +175,6 @@ class FasterRCNN(nn.Module):
         label = np.concatenate(label, axis=0).astype(np.int32)
         score = np.concatenate(score, axis=0).astype(np.float32)
         return bbox, label, score
-
-
 
     def predict(self, imgs,sizes=None,visualize=False):
         """Detect objects from images.
@@ -214,20 +210,22 @@ class FasterRCNN(nn.Module):
             prepared_imgs = list()
             sizes = list()
             for img in imgs:
-                size = img.shape[1:]
+                size = img.shape[1:]  # raw image size
                 img = preprocess(at.tonumpy(img))
                 prepared_imgs.append(img)
                 sizes.append(size)
         else:
              prepared_imgs = imgs 
+
         bboxes = list()
         labels = list()
         scores = list()
+
         for img, size in zip(prepared_imgs, sizes):
             img = t.autograd.Variable(at.totensor(img).float()[None], volatile=True)
             
-            # print(img.shape[3])
-            # print(size[1])
+            # print(img.shape)
+            # print(size)
 
             # print(type(img.shape[3]))
             # print(type(size[1]))
@@ -240,26 +238,42 @@ class FasterRCNN(nn.Module):
                 img.shape[3] = int(img.shape[3])
 
             scale = img.shape[3] / size[1]
-            roi_cls_loc, roi_scores, rois, _ = self(img, scale=scale)
+            # print(scale)
+
+            # (px, py), roi_scores, rois, search_regions, roi_indices
+            (px, py), roi_scores, rois, search_regions, _ = self(img, scale=scale)
             # We are assuming that batch size is 1.
             roi_score = roi_scores.data
-            roi_cls_loc = roi_cls_loc.data
+            px = px.data
+            py = py.data
+
             roi = at.totensor(rois) / scale
+            
+            # Convert to numpy array
+            px = at.tonumpy(px)
+            py = at.tonumpy(py)
+            search_regions = at.tonumpy(search_regions)
 
             # Convert predictions to bounding boxes in image coordinates.
             # Bounding boxes are scaled to the scale of the input images.
-            mean = t.Tensor(self.loc_normalize_mean).cuda(). \
-                repeat(self.n_class)[None]
-            std = t.Tensor(self.loc_normalize_std).cuda(). \
-                repeat(self.n_class)[None]
+            
+            # use px, py and search_regions to generate boxes
+            cls_bbox = p2bbox(px, py, search_regions, threshold=0.3)
 
-            roi_cls_loc = (roi_cls_loc * std + mean)
-            roi_cls_loc = roi_cls_loc.view(-1, self.n_class, 4)
-            roi = roi.view(-1, 1, 4).expand_as(roi_cls_loc)
-            cls_bbox = loc2bbox(at.tonumpy(roi).reshape((-1, 4)),
-                                at.tonumpy(roi_cls_loc).reshape((-1, 4)))
+            # print(cls_bbox.shape)
+            
+            # print(px.shape)
+            # print(py.shape)
+            # print(search_regions.shape)
+
+
+            # roi_cls_loc = roi_cls_loc.view(-1, self.n_class, 4)
+            # roi = roi.view(-1, 1, 4).expand_as(roi_cls_loc)
+            # cls_bbox = loc2bbox(at.tonumpy(roi).reshape((-1, 4)),
+            #                     at.tonumpy(roi_cls_loc).reshape((-1, 4)))
+            
             cls_bbox = at.totensor(cls_bbox)
-            cls_bbox = cls_bbox.view(-1, self.n_class * 4)
+        
             # clip bounding box
             cls_bbox[:, 0::2] = (cls_bbox[:, 0::2]).clamp(min=0, max=size[0])
             cls_bbox[:, 1::2] = (cls_bbox[:, 1::2]).clamp(min=0, max=size[1])

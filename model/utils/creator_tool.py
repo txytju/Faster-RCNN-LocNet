@@ -41,9 +41,7 @@ class ProposalTargetCreator(object):
         self.neg_iou_thresh_hi = neg_iou_thresh_hi
         self.neg_iou_thresh_lo = neg_iou_thresh_lo  # NOTE: py-faster-rcnn默认的值是0.1
 
-    def __call__(self, roi, search_region, bbox, label,
-                 loc_normalize_mean=(0., 0., 0., 0.),
-                 loc_normalize_std=(0.1, 0.1, 0.2, 0.2)):
+    def __call__(self, roi, search_region, bbox, label):
         """Assigns ground truth to sampled proposals.
 
         This function samples total of :obj:`self.n_sample` RoIs
@@ -97,19 +95,32 @@ class ProposalTargetCreator(object):
 
         n_bbox, _ = bbox.shape
 
+        # print("roi shape", roi.shape)
+        # print("search_region shape", search_region.shape)
+        # print("bbox shape", bbox.shape)
+
+
+
+
         # roi shape (N,4) , bbox shape (M,4), so the new iou shape is (N+M,4)
-        roi = np.concatenate((roi, bbox), axis=0) # 为什么把 roi 和 bbox 连起来了
+        # roi = np.concatenate((roi, bbox), axis=0) # 为什么把 roi 和 bbox 连起来了
+        # search_boxes = _generate_search_region(bbox, Sh=1.2, Sw=1.2) # enlarge bbox to get some search_regions
+        # search_region = np.concatenate((search_region, search_boxes), axis=0)
 
         pos_roi_per_image = np.round(self.n_sample * self.pos_ratio) # 正样本的数量
         iou = bbox_iou(roi, bbox) #  iou shape is (N+M, M)
         gt_assignment = iou.argmax(axis=1)  # 含义是把某一个 roi 分配给了哪一个 bbox
         max_iou = iou.max(axis=1)
+
         # Offset range of classes from [0, n_fg_class - 1] to [1, n_fg_class].
         # The label with value 0 is the background.
         gt_roi_label = label[gt_assignment] + 1
 
         # Select foreground RoIs as those with >= pos_iou_thresh IoU.
         pos_index = np.where(max_iou >= self.pos_iou_thresh)[0]
+
+        print("pos_index shape ", pos_index.shape)
+
         pos_roi_per_this_image = int(min(pos_roi_per_image, pos_index.size))
         if pos_index.size > 0:
             pos_index = np.random.choice(
@@ -132,6 +143,13 @@ class ProposalTargetCreator(object):
         gt_roi_label = gt_roi_label[keep_index]
         gt_roi_label[pos_roi_per_this_image:] = 0  # negative labels --> 0
         
+        # print(keep_index.shape)
+        # print("search_region.shape", search_region.shape)
+        # print("max of search_region", np.max(search_region))
+        # for i in range(search_region.shape[0]):
+        # print(search_region[i,:])
+
+        # print(roi.shape)
 
         sample_roi = roi[keep_index]
         sample_search_region = search_region[keep_index]
@@ -141,12 +159,9 @@ class ProposalTargetCreator(object):
         # 当然这里可能出现一个 bbox 对应了多个 sample_roi 的情况
         # sample_bboxes shape (S,4)
         sample_bbox = bbox[gt_assignment[keep_index]]
+        
         Tx, Ty = bbox2T(sample_search_region, sample_bbox)
 
-        # Compute offsets and scales to match sampled RoIs to the GTs.
-        # gt_roi_loc = bbox2loc(sample_roi, bbox[gt_assignment[keep_index]])
-        # gt_roi_loc = ((gt_roi_loc - np.array(loc_normalize_mean, np.float32)
-        #                ) / np.array(loc_normalize_std, np.float32))
 
         return sample_roi, sample_search_region, (Tx,Ty), gt_roi_label
 
@@ -423,9 +438,7 @@ class ProposalCreator:
         roi = loc2bbox(anchor, loc) 
 
         # generate search_region using roi
-        search_region = generate_search_region(roi)
-
-
+        search_region = _generate_search_region(roi)
 
         # Clip predicted boxes to image. 
         # 使用reshaped image的上下左右边来裁剪 roi，使得roi都在reshaped image里边
@@ -435,7 +448,6 @@ class ProposalCreator:
         # 使用reshaped image的上下左右边来裁剪 search_region，使得search_region都在reshaped image里边
         search_region[:, slice(0, 4, 2)] = np.clip(search_region[:, slice(0, 4, 2)], 0, img_size[0])
         search_region[:, slice(1, 4, 2)] = np.clip(search_region[:, slice(1, 4, 2)], 0, img_size[1])
-
 
         # Remove predicted boxes with either height or width < threshold.
         min_size = self.min_size * scale
@@ -464,18 +476,29 @@ class ProposalCreator:
         if n_post_nms > 0:
             keep = keep[:n_post_nms]
         
+        # print(keep.shape)
+
         roi = roi[keep]
         search_region = search_region[keep]
+
+        # for i in range(roi.shape[0]):
+        #     print(roi[i,:])
+        # for i in range(search_region.shape[0]):
+        #     print(search_region[i,:])
+
         
         return roi, search_region
 
 
-def generate_search_region(roi, Sh=1.2, Sw=1.2):
+def _generate_search_region(roi, Sh=1.2, Sw=1.2):
 
     search_region = np.zeros(roi.shape)
 
     for i in range(roi.shape[0]):
         ymin_roi, xmin_roi, ymax_roi, xmax_roi = roi[i,:]
+
+        # print(ymin_roi, ymax_roi)
+
         y_center = (ymin_roi + ymax_roi)/2
         x_center = (xmin_roi + xmax_roi)/2
         
@@ -492,5 +515,5 @@ def generate_search_region(roi, Sh=1.2, Sw=1.2):
         xmax_s = x_center + width_s/2
 
         search_region[i,:] = ymin_s, xmin_s, ymax_s, xmax_s
-
-        return search_region
+    
+    return search_region

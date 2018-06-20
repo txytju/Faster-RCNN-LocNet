@@ -55,7 +55,7 @@ def train(**kwargs):
     print('load data')
     dataloader = data_.DataLoader(dataset, 
                                   batch_size=1, 
-                                  shuffle=True, 
+                                  shuffle=False, 
                                   # pin_memory=True,
                                   num_workers=opt.num_workers)
     testset = TestDataset(opt)
@@ -85,6 +85,8 @@ def train(**kwargs):
             scale = at.scalar(scale)
             img, bbox, label = img.cuda().float(), bbox_.cuda(), label_.cuda()
             img, bbox, label = Variable(img), Variable(bbox), Variable(label)
+
+            print(label)
             
             # all the input data for one training are : img, bbox, label, scale
             trainer.train_step(img, bbox, label, scale)
