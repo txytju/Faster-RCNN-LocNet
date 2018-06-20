@@ -159,11 +159,14 @@ class FasterRCNN(nn.Module):
         score = list()
         # skip cls_id = 0 because it is the background class
         for l in range(1, self.n_class):
-            cls_bbox_l = raw_cls_bbox.reshape((-1, self.n_class, 4))[:, l, :]
+
+            cls_bbox_l = raw_cls_bbox
             prob_l = raw_prob[:, l]
+            
             mask = prob_l > self.score_thresh
             cls_bbox_l = cls_bbox_l[mask]
             prob_l = prob_l[mask]
+            
             keep = non_maximum_suppression(
                 cp.array(cls_bbox_l), self.nms_thresh, prob_l)
             keep = cp.asnumpy(keep)
@@ -241,9 +244,7 @@ class FasterRCNN(nn.Module):
                 img.shape[3] = int(img.shape[3])
 
             scale = img.shape[3] / size[1]
-            # print(scale)
 
-            # (px, py), roi_scores, rois, search_regions, roi_indices
             (px, py), roi_scores, rois, search_regions, _ = self(img, scale=scale)
             # We are assuming that batch size is 1.
             roi_score = roi_scores.data
@@ -261,20 +262,7 @@ class FasterRCNN(nn.Module):
             # Bounding boxes are scaled to the scale of the input images.
             
             # use px, py and search_regions to generate boxes
-            cls_bbox = p2bbox(px, py, search_regions, threshold=0.3)
-
-            print(cls_bbox)
-            print(cls_bbox.shape)  # shape of (300, 4)
-  
-            print(roi_score)
-            print(roi_score.shape) # shape of (300, 21)
-
-            
-            # print(px.shape)
-            # print(py.shape)
-            # print(search_regions.shape)
-
-            
+            cls_bbox = p2bbox(px, py, search_regions, threshold=0.3)         
             cls_bbox = at.totensor(cls_bbox)
         
             # clip bounding box
@@ -283,17 +271,13 @@ class FasterRCNN(nn.Module):
 
             prob = at.tonumpy(F.softmax(at.tovariable(roi_score), dim=1))
 
-            print(prob)
-            print(prob.shape)
-
             raw_cls_bbox = at.tonumpy(cls_bbox)
             raw_prob = at.tonumpy(prob)
 
+            print("raw_cls_bbox shape : ", raw_cls_bbox.shape)
+            print("raw_prob : ", raw_prob)
 
-            bbox, label, score = cls_bbox, 1, raw_prob
-            # bbox, label, score = self._suppress(raw_cls_bbox, raw_prob)
-
-
+            bbox, label, score = self._suppress(raw_cls_bbox, raw_prob)
 
             bboxes.append(bbox)
             labels.append(label)
@@ -301,6 +285,7 @@ class FasterRCNN(nn.Module):
 
         self.use_preset('evaluate')
         self.train()
+
         return bboxes, labels, scores
 
     def get_optimizer(self):

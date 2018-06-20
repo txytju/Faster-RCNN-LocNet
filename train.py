@@ -86,7 +86,7 @@ def train(**kwargs):
             img, bbox, label = img.cuda().float(), bbox_.cuda(), label_.cuda()
             img, bbox, label = Variable(img), Variable(bbox), Variable(label)
 
-            print(label)
+            # print(label)
             
             # all the input data for one training are : img, bbox, label, scale
             trainer.train_step(img, bbox, label, scale)
@@ -109,6 +109,10 @@ def train(**kwargs):
 
                 # plot predicti bboxes
                 _bboxes, _labels, _scores = trainer.faster_rcnn.predict([ori_img_], visualize=True)
+
+                # print(_bboxes)
+                # print(len(_bboxes))
+
                 pred_img = visdom_bbox(ori_img_,
                                        at.tonumpy(_bboxes[0]),
                                        at.tonumpy(_labels[0]).reshape(-1),
@@ -123,10 +127,9 @@ def train(**kwargs):
         # use the test dataset to eval
         eval_result = eval(test_dataloader, faster_rcnn, test_num=opt.test_num)
 
-        print(eval_result)
+        print("eval_result", eval_result)
 
-        # if eval_result['map'] > best_map:
-        if True :
+        if eval_result['map'] > best_map:
             best_map = eval_result['map']
             best_path = trainer.save(best_map=best_map)
         if epoch == 9:

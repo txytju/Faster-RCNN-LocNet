@@ -10,7 +10,7 @@ def _area_of_box(box):
 
     return (ymax-ymin) * (xmax-xmin)
 
-def p2bbox(px, py, search_regions, threshold=0.1):
+def p2bbox(px, py, search_regions, threshold=0.5):
     '''
     use px, py to get bounding boxes from search_regions.
     Args :
@@ -21,8 +21,7 @@ def p2bbox(px, py, search_regions, threshold=0.1):
         bboxes shape of (S,4)
     '''
     boxes = np.zeros(search_regions.shape)
-
-    # print(type(px))
+    # boxes = []
 
     M = px.shape[1]
 
@@ -31,27 +30,27 @@ def p2bbox(px, py, search_regions, threshold=0.1):
         x = px[i,:]
         y = py[i,:]
 
-        # print(x)
-        # print("x is :", x)
-
         x = np.where(x>threshold)
         y = np.where(y>threshold)
 
         # print("x.shape and y.sghape", x[0].shape, y[0].shape)
-
-        x_s, x_e = x[0][0], x[0][1]
-        y_s, y_e = y[0][0], y[0][1]
+        if x[0].any() and y[0].any() :
+            x_s, x_e = x[0][0], x[0][-1]
+            y_s, y_e = y[0][0], y[0][-1]
         
-        ymin, xmin, ymax, xmax = search_regions[i,:]
-        height_block = (ymax - ymin) / M
-        width_block = (xmax - xmin) / M
+            ymin, xmin, ymax, xmax = search_regions[i,:]
+            height_block = (ymax - ymin) / M
+            width_block = (xmax - xmin) / M
 
-        y_start = ymin + y_s * height_block
-        y_end  = ymin + y_e * height_block
-        x_start = xmin + x_s * width_block
-        x_end  = xmin + x_e * width_block
+            y_start = ymin + y_s * height_block
+            y_end  = ymin + y_e * height_block
+            x_start = xmin + x_s * width_block
+            x_end  = xmin + x_e * width_block
+            
+            boxes[i, :] = [y_start, x_start, y_end, x_end]
+            # boxes.append([y_start, x_start, y_end, x_end])
 
-        boxes[i,:] = y_start, x_start, y_end, x_end
+    # boxes = np.array(boxes)
 
     return boxes
 
@@ -120,7 +119,7 @@ def bbox2T(search_regions, bboxes, M=28):
 
     for jj, (search_region, intersection) in enumerate(zip(search_regions, intersections)):
         
-        if intersection.any():
+        if _area_of_box(intersection):
 
             ymin, xmin, ymax, xmax = search_region
             bottom, left, top, right = intersection
@@ -149,8 +148,9 @@ def bbox2T(search_regions, bboxes, M=28):
 
             Ty[jj,:] = np.array(ty)
     
-    if (np.max(Tx))== 0:
-        print("Tx all zeros!!!!")
+    # Tx can be all 0, because some of search_regions are negtive. 
+    # if (np.max(Tx))== 0:
+    #     print("Tx all zeros!!!!")
  
     return Tx, Ty
 
@@ -213,7 +213,7 @@ def loc2bbox(src_bbox, loc):
     dh = loc[:, 2::4]
     dw = loc[:, 3::4]
 
-    print("dh = ", dh)
+    # print("dh = ", dh)
 
     ctr_y = dy * src_height[:, xp.newaxis] + src_ctr_y[:, xp.newaxis]
     ctr_x = dx * src_width[:, xp.newaxis] + src_ctr_x[:, xp.newaxis]

@@ -92,15 +92,9 @@ class ProposalTargetCreator(object):
 
 
         """
-
         n_bbox, _ = bbox.shape
 
-        # print("roi shape", roi.shape)
-        # print("search_region shape", search_region.shape)
-        # print("bbox shape", bbox.shape)
-
-
-
+        # print("n_bbox : ", n_bbox)
 
         # roi shape (N,4) , bbox shape (M,4), so the new iou shape is (N+M,4)
         # roi = np.concatenate((roi, bbox), axis=0) # 为什么把 roi 和 bbox 连起来了
@@ -108,7 +102,7 @@ class ProposalTargetCreator(object):
         # search_region = np.concatenate((search_region, search_boxes), axis=0)
 
         pos_roi_per_image = np.round(self.n_sample * self.pos_ratio) # 正样本的数量
-        iou = bbox_iou(roi, bbox) #  iou shape is (N+M, M)
+        iou = bbox_iou(roi, bbox) #  iou shape is (N, M) or (N+M, M)    
         gt_assignment = iou.argmax(axis=1)  # 含义是把某一个 roi 分配给了哪一个 bbox
         max_iou = iou.max(axis=1)
 
@@ -118,8 +112,6 @@ class ProposalTargetCreator(object):
 
         # Select foreground RoIs as those with >= pos_iou_thresh IoU.
         pos_index = np.where(max_iou >= self.pos_iou_thresh)[0]
-
-        print("pos_index shape ", pos_index.shape)
 
         pos_roi_per_this_image = int(min(pos_roi_per_image, pos_index.size))
         if pos_index.size > 0:
@@ -143,12 +135,12 @@ class ProposalTargetCreator(object):
         gt_roi_label = gt_roi_label[keep_index]
         gt_roi_label[pos_roi_per_this_image:] = 0  # negative labels --> 0
         
+        # print("gt_roi_label ", gt_roi_label)
         # print(keep_index.shape)
         # print("search_region.shape", search_region.shape)
         # print("max of search_region", np.max(search_region))
         # for i in range(search_region.shape[0]):
         # print(search_region[i,:])
-
         # print(roi.shape)
 
         sample_roi = roi[keep_index]
@@ -160,8 +152,10 @@ class ProposalTargetCreator(object):
         # sample_bboxes shape (S,4)
         sample_bbox = bbox[gt_assignment[keep_index]]
         
+        # print("", gt_assignment[keep_index])
+        # print("sample_bbox ", sample_bbox)
+        
         Tx, Ty = bbox2T(sample_search_region, sample_bbox)
-
 
         return sample_roi, sample_search_region, (Tx,Ty), gt_roi_label
 
@@ -444,7 +438,6 @@ class ProposalCreator:
         # 使用reshaped image的上下左右边来裁剪 roi，使得roi都在reshaped image里边
         roi[:, slice(0, 4, 2)] = np.clip(roi[:, slice(0, 4, 2)], 0, img_size[0])
         roi[:, slice(1, 4, 2)] = np.clip(roi[:, slice(1, 4, 2)], 0, img_size[1])
-
         # 使用reshaped image的上下左右边来裁剪 search_region，使得search_region都在reshaped image里边
         search_region[:, slice(0, 4, 2)] = np.clip(search_region[:, slice(0, 4, 2)], 0, img_size[0])
         search_region[:, slice(1, 4, 2)] = np.clip(search_region[:, slice(1, 4, 2)], 0, img_size[1])
@@ -475,18 +468,10 @@ class ProposalCreator:
                                        thresh=self.nms_thresh)
         if n_post_nms > 0:
             keep = keep[:n_post_nms]
-        
-        # print(keep.shape)
 
         roi = roi[keep]
         search_region = search_region[keep]
-
-        # for i in range(roi.shape[0]):
-        #     print(roi[i,:])
-        # for i in range(search_region.shape[0]):
-        #     print(search_region[i,:])
-
-        
+      
         return roi, search_region
 
 
@@ -496,8 +481,6 @@ def _generate_search_region(roi, Sh=1.2, Sw=1.2):
 
     for i in range(roi.shape[0]):
         ymin_roi, xmin_roi, ymax_roi, xmax_roi = roi[i,:]
-
-        # print(ymin_roi, ymax_roi)
 
         y_center = (ymin_roi + ymax_roi)/2
         x_center = (xmin_roi + xmax_roi)/2

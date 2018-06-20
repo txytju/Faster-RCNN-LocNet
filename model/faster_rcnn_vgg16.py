@@ -143,10 +143,10 @@ class VGG16RoIHead(nn.Module):
 
 
         normal_init(self.score, 0, 0.01)
-        normal_init(self.conv_21, 0, 0.001)
-        normal_init(self.conv_22, 0, 0.001)
-        normal_init(self.fc_x, 0, 0.001)
-        normal_init(self.fc_y, 0, 0.001)
+        normal_init(self.conv_21, 0, 0.01)
+        normal_init(self.conv_22, 0, 0.01)
+        normal_init(self.fc_x, 0, 0.01)
+        normal_init(self.fc_y, 0, 0.01)
 
 
     def forward(self, x, rois, seach_regions, roi_indices):

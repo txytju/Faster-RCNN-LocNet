@@ -105,8 +105,8 @@ class RegionProposalNetwork(nn.Module):
         rpn_locs = self.loc(h)
 
         # print("x is ", x)
-        print("h is ", h)
-        print("rpn_locs is ", rpn_locs)
+        # print("h is ", h)
+        # print("rpn_locs is ", rpn_locs)
 
         rpn_locs = rpn_locs.permute(0, 2, 3, 1).contiguous().view(n, -1, 4)   # shape (n, hh*ww*n_anchor, 4)
         
