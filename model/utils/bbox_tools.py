@@ -34,7 +34,8 @@ def p2bbox(px, py, search_regions, threshold=0.5):
         y = np.where(y>threshold)
 
         # print("x.shape and y.sghape", x[0].shape, y[0].shape)
-        if x[0].any() and y[0].any() :
+        # if x[0].any() and y[0].any() :
+        if len(x[0])>=5 and len(y[0])>=5 :
             x_s, x_e = x[0][0], x[0][-1]
             y_s, y_e = y[0][0], y[0][-1]
         
