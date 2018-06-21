@@ -2,6 +2,8 @@
 
 ## 1. Introduction
 
+![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-21-LocNet-FasterRCNN.001.jpeg)
+
 This project is a Simplified Faster R-CNN **improved by LocNet** implementation based on [Faster R-CNN by chenyuntc](https://github.com/chenyuntc/simple-faster-rcnn-pytorch). It aims to:
 
 - Improve the localization accuracy of Faster R-CNN by using LocNet in the Fast R-CNN part.
@@ -42,7 +44,7 @@ This repo is built basically on [Faster R-CNN](https://github.com/chenyuntc/simp
 
 ## More
 
-- [ ] model structure
+- [x] model structure
 - [ ] maybe : skip pooling
 - [ ] Maybe : conv 3X3 and conv 5X5 in RPN
 
