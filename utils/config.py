@@ -47,7 +47,7 @@ class Config:
 
     test_num = 10000
     # model
-    load_path = 'checkpoints/fasterrcnn_06211103_0.0945009654900402'
+    load_path = 'checkpoints/fasterrcnn_06211400_0.07941720969075042'
 
     caffe_pretrain = False # use caffe pretrained model instead of torchvision
     caffe_pretrain_path = 'checkpoints/vgg16-caffe.pth'

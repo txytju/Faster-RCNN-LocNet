@@ -1,17 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="ec045d63-6799-4b0a-935a-42d37fef3991" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model/faster_rcnn.py" beforeDir="false" afterPath="$PROJECT_DIR$/model/faster_rcnn.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model/faster_rcnn_vgg16.py" beforeDir="false" afterPath="$PROJECT_DIR$/model/faster_rcnn_vgg16.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model/region_proposal_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/model/region_proposal_network.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model/utils/bbox_tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/model/utils/bbox_tools.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model/utils/creator_tool.py" beforeDir="false" afterPath="$PROJECT_DIR$/model/utils/creator_tool.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/train.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/config.py" afterDir="false" />
-    </list>
+    <list default="true" id="ec045d63-6799-4b0a-935a-42d37fef3991" name="Default" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />

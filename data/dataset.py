@@ -125,7 +125,7 @@ class TestDataset:
     def __getitem__(self, idx):
         ori_img, bbox, label, difficult = self.db.get_example(idx)
         img = preprocess(ori_img)
-        return img, ori_img.shape[1:], bbox, label, difficult
+        return img, ori_img.shape[1:], bbox, label, difficult  # the original shape of the image is passed.
 
     def __len__(self):
         return len(self.db)
