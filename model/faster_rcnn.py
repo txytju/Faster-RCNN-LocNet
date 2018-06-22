@@ -182,7 +182,7 @@ class FasterRCNN(nn.Module):
         
         return bbox, label, score
 
-    def predict(self, imgs, sizes=None, visualize=False):
+    def predict(self, imgs, sizes=None, visualize=False, prob_thre=0.7):
         """Detect objects from images.
 
         This method predicts objects for each image.
@@ -259,7 +259,7 @@ class FasterRCNN(nn.Module):
             # Bounding boxes are scaled to the scale of the input images.
             
             # use px, py and search_regions to generate boxes
-            cls_bbox = p2bbox(px, py, search_regions, threshold=0.7)         
+            cls_bbox = p2bbox(px, py, search_regions, threshold=prob_thre)         
             cls_bbox = at.totensor(cls_bbox)
         
             # clip bounding box

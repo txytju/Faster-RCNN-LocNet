@@ -25,14 +25,14 @@ resource.setrlimit(resource.RLIMIT_NOFILE, (20480, rlimit[1]))
 matplotlib.use('agg')
 
 
-def eval(dataloader, faster_rcnn, test_num=10000):
+def eval(dataloader, faster_rcnn, test_num=10000, prob_thre=0.7):
     pred_bboxes, pred_labels, pred_scores = list(), list(), list()
     gt_bboxes, gt_labels, gt_difficults = list(), list(), list()
     for ii, (imgs, sizes, gt_bboxes_, gt_labels_, gt_difficults_) in tqdm(enumerate(dataloader)):
         # imgs here are reshaped images
         # sizes here are the original shape of images
         sizes = [sizes[0][0], sizes[1][0]]
-        pred_bboxes_, pred_labels_, pred_scores_ = faster_rcnn.predict(imgs, [sizes])
+        pred_bboxes_, pred_labels_, pred_scores_ = faster_rcnn.predict(imgs, [sizes], prob_thre=prob_thre)
         
         gt_bboxes += list(gt_bboxes_.numpy())
         gt_labels += list(gt_labels_.numpy())
@@ -126,7 +126,7 @@ def train(**kwargs):
                 trainer.vis.img('roi_cm', at.totensor(trainer.roi_cm.conf, False).float())
         
         # use the test dataset to eval
-        eval_result = eval(test_dataloader, faster_rcnn, test_num=opt.test_num)
+        eval_result = eval(test_dataloader, faster_rcnn, test_num=opt.test_num, prob_thre=opt.prob_thre)
 
         print("eval_result", eval_result)
 

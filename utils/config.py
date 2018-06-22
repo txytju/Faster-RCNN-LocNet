@@ -7,6 +7,10 @@ from pprint import pprint
 
 
 class Config:
+    
+    # probability threshold when using px and py to generate predicting box
+    prob_thre = 0.7
+
     # data
     # voc_data_dir = '/home/cy/.chainer/dataset/pfnet/chainercv/voc/VOCdevkit/VOC2007/'
     voc_data_dir = '/home/cvdev/Faster-RCNN-LocNet/VOCdevkit/VOC2007_traindev'
