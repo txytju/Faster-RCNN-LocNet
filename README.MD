@@ -30,21 +30,19 @@ This implementation is slightlly different from the original paper:
 
 #### 2.1.2 prediction compared with Faster R-CNN
 
-```
-ground truth               |  Faster R-CNN with LocNet | Faster R-CNN
-:-------------------------:|:-------------------------:|:-------------------------
-![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png)  |  ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png) |![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png)
-```
 
- 
 
-```
-<p float="left">
-  <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png" width="100" />
-  <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png" width="100" /> 
-  <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png" width="100" />
-</p>
-```
+
+
+<p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png" width="100" /> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png" width="100" />  <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png" width="100" /> </p>
+
+
+
+|                       ground truth                       |                 Faster R-CNN with LocNet                 | Faster R-CNN                                             |
+| :------------------------------------------------------: | :------------------------------------------------------: | :------------------------------------------------------- |
+| ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png) | ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png) | ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png) |
+
+
 
 VGG16 train on `trainval` and test on `test` split.
 
