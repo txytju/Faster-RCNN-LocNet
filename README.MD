@@ -30,21 +30,14 @@ This implementation is slightlly different from the original paper:
 
 #### 2.1.2 prediction compared with Faster R-CNN
 
-
-
-
-
-<p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png" width="100" /> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png" width="100" />  <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png" width="100" /> </p>
-
-
-
 |                         Ground Truth                         |                   Faster R-CNN with LocNet                   | Faster R-CNN                                                 |
 | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------- |
 | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png" width="300" />  </p> |
-| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png" width="300" />  </p> |                                                              |                                                              |
-| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png" width="300" />  </p> |                                                              |                                                              |
-|                                                              |                                                              |                                                              |
-|                                                              |                                                              |                                                              |
+| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-2.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-2.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-2.1.png" width="300" />  </p> |
+| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-3.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-3.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-3.2.png" width="300" />  </p> |
+| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-4.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-4.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-4.2.png" width="300" />  </p> |
+| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-5.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-5.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-5.2.png" width="300" />  </p> |
+| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-6.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-6.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-6.2.png" width="300" />  </p> |
 
 
 
