@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import ipdb
 import matplotlib
 from tqdm import tqdm
@@ -17,7 +18,7 @@ from utils.eval_tool import eval_detection_voc
 
 import resource
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
 resource.setrlimit(resource.RLIMIT_NOFILE, (20480, rlimit[1]))
@@ -145,6 +146,47 @@ def train(**kwargs):
         trainer.vis.log(log_info)
         if epoch == 13: 
             break
+
+
+
+def eval_prob_thre(**kwargs):
+    '''
+    Use the best trained model to find out the best prob_thre, \
+    which is used when generating prediction box using px and py.
+    '''
+    opt._parse(kwargs)
+
+    testset = TestDataset(opt)
+    test_dataloader = data_.DataLoader(testset,
+                                       batch_size=1,
+                                       num_workers=opt.test_num_workers,
+                                       shuffle=False, 
+                                       pin_memory=True
+                                       )
+
+    # model and trainer
+    faster_rcnn = FasterRCNNVGG16()
+    print('model construct completed')
+
+    trainer = FasterRCNNTrainer(faster_rcnn).cuda()
+
+    if opt.load_path:
+        trainer.load(opt.load_path)
+        print('load pretrained model from %s' % opt.load_path)
+
+    best_map = 0
+    
+    for prob_thre in np.linspace(0.3,0.9,7):
+        
+        # use the test dataset to eval
+        eval_result = eval(test_dataloader, faster_rcnn, test_num=opt.test_num, prob_thre=prob_thre)
+        print("eval_result", eval_result)
+        if eval_result['map'] > best_map:
+            best_map = eval_result['map']
+
+    print("best_map is ", best_map)
+
+
 
 
 if __name__ == '__main__':
