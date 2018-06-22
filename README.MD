@@ -40,9 +40,9 @@ This implementation is slightlly different from the original paper:
 
 |                         Ground Truth                         |                   Faster R-CNN with LocNet                   | Faster R-CNN                                                 |
 | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------- |
-| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png" width="200" />  </p> | ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png =250x250) | ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png =250x250) |
-|                                                              |                                                              |                                                              |
-|                                                              |                                                              |                                                              |
+| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png" width="300" />  </p> |
+| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png" width="300" />  </p> |                                                              |                                                              |
+| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png" width="300" />  </p> |                                                              |                                                              |
 |                                                              |                                                              |                                                              |
 |                                                              |                                                              |                                                              |
 
