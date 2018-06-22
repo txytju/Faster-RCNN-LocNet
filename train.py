@@ -175,6 +175,7 @@ def eval_prob_thre(**kwargs):
         print('load pretrained model from %s' % opt.load_path)
 
     best_map = 0
+    best_prob_thre = 0
     
     for prob_thre in np.linspace(0.3,0.9,7):
         
@@ -183,8 +184,10 @@ def eval_prob_thre(**kwargs):
         print("eval_result", eval_result)
         if eval_result['map'] > best_map:
             best_map = eval_result['map']
+            best_prob_thre = prob_thre
 
     print("best_map is ", best_map)
+    print("best prob_thre is ", best_prob_thre)
 
 
 
