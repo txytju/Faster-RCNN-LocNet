@@ -40,7 +40,7 @@ This implementation is slightlly different from the original paper:
 
 |                         Ground Truth                         |                   Faster R-CNN with LocNet                   | Faster R-CNN                                                 |
 | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------- |
-| ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png = 250x250) | ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png = 250x250) | ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png = 250x250) |
+| ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png =250x250) | ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png =250x250) | ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png =250x250) |
 |                                                              |                                                              |                                                              |
 |                                                              |                                                              |                                                              |
 |                                                              |                                                              |                                                              |
