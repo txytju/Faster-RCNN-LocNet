@@ -4,11 +4,11 @@
 
 ![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-LocNet-FasterRCNN.001.jpeg)
 
-This project is a Simplified Faster R-CNN **improved by LocNet** implementation based on [Faster R-CNN by chenyuntc](https://github.com/chenyuntc/simple-faster-rcnn-pytorch). It aims to:
+This project is a Simplified Faster R-CNN **improved by LocNet** implementation based on [Faster R-CNN by chenyuntc](https://github.com/chenyuntc/simple-faster-rcnn-pytorch). It aims in:
 
 - Improve the localization accuracy of Faster R-CNN by using LocNet in the Fast R-CNN part.
 - Complete the first public implementation of the [origin paper](https://ieeexplore.ieee.org/abstract/document/8270086/). The author of the paper didn't release their version.
-- Match the performance reported in origin paper.
+- Match the performance reported in original paper.
 
 And it has the following features:
 
@@ -17,7 +17,7 @@ And it has the following features:
 This implementation is slightlly different from the original paper:
 
 - Skip pooling is not used here. Informations from conv5_3 layer(the feature map of original Faster R-CNN) is enough for my task, so skip pooling is droped in this repo.
-- The RPN net is exactly the same as Faster R-CNN, which means onely 3X3 conv is applied, rather than 3X3 and 5X5 conv nets in the original paper.
+- The RPN net is exactly same as Faster R-CNN, which means onely 3X3 conv is applied, rather than 3X3 and 5X5 conv nets in the original paper.
 - Training strategy. The original paper train the RPN and LocNet alternately, but losses of RPN and LocNet are backproped at the same time.
 
 ## 2. Performance
@@ -33,7 +33,7 @@ This implementation is slightlly different from the original paper:
 |                         Ground Truth                         |                   Faster R-CNN with LocNet                   | Faster R-CNN                                                 |
 | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------- |
 | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-1.2.png" width="300" />  </p> |
-| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-2.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-2.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-2.1.png" width="300" />  </p> |
+| <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-2.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-2.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-2.2.png" width="300" />  </p> |
 | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-3.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-3.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-3.2.png" width="300" />  </p> |
 | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-4.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-4.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-4.2.png" width="300" />  </p> |
 | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-5.0.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-5.1.png" width="300" />  </p> | <p float="left"> <img src="http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-5.2.png" width="300" />  </p> |
