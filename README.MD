@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-21-LocNet-FasterRCNN.001.jpeg)
+![](http://p3rz3gu1u.bkt.clouddn.com/2018-06-22-LocNet-FasterRCNN.001.jpeg)
 
 This project is a Simplified Faster R-CNN **improved by LocNet** implementation based on [Faster R-CNN by chenyuntc](https://github.com/chenyuntc/simple-faster-rcnn-pytorch). It aims to:
 
