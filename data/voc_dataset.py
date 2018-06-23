@@ -106,10 +106,11 @@ class VOCBboxDataset:
         label = list()
         difficult = list()
         for obj in anno.findall('object'):
+            
             # when in not using difficult split, and the object is
             # difficult, skipt it.
-            if not self.use_difficult and int(obj.find('difficult').text) == 1:
-                continue
+            # if not self.use_difficult and int(obj.find('difficult').text) == 1:
+            #     continue
 
             # difficult.append(int(obj.find('difficult').text))
             # difficulty all set to 0 when using question dataset
