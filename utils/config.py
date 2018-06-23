@@ -13,7 +13,9 @@ class Config:
 
     # data
     # voc_data_dir = '/home/cy/.chainer/dataset/pfnet/chainercv/voc/VOCdevkit/VOC2007/'
-    voc_data_dir = '/home/cvdev/Faster-RCNN-LocNet/VOCdevkit/VOC2007_traindev'
+    # voc_data_dir = '/home/cvdev/Faster-RCNN-LocNet/VOCdevkit/VOC2007_traindev'
+    voc_data_dir = '/home/cvdev/Faster-RCNN-LocNet/question_dataset'
+
     min_size = 600  # image resize
     max_size = 1000 # image resize
     num_workers = 8
@@ -51,7 +53,7 @@ class Config:
 
     test_num = 10000
     # model
-    load_path = 'checkpoints/fasterrcnn_06221136_0.6133301272279761'
+    load_path = None
 
     caffe_pretrain = False # use caffe pretrained model instead of torchvision
     caffe_pretrain_path = 'checkpoints/vgg16-caffe.pth'
