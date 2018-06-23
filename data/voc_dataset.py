@@ -111,7 +111,10 @@ class VOCBboxDataset:
             if not self.use_difficult and int(obj.find('difficult').text) == 1:
                 continue
 
-            difficult.append(int(obj.find('difficult').text))
+            # difficult.append(int(obj.find('difficult').text))
+            # difficulty all set to 0 when using question dataset
+            difficult.append(0)
+
             bndbox_anno = obj.find('bndbox')
             # subtract 1 to make pixel indexes 0-based
             bbox.append([
