@@ -29,7 +29,7 @@ class Config:
     # 0.0005 in origin paper but 0.0001 in tf-faster-rcnn
     weight_decay = 0.0005
     lr_decay = 0.1  # 1e-3 -> 1e-4
-    lr = 1e-5
+    lr = 1e-4
 
 
     # visualization
@@ -42,7 +42,7 @@ class Config:
     pretrained_model = 'vgg16'
 
     # training
-    epoch = 14
+    epoch = 50
 
 
     use_adam = False # Use Adam optimizer
@@ -53,7 +53,7 @@ class Config:
 
     test_num = 10000
     # model
-    load_path = None
+    load_path = "/home/cvdev/Faster-RCNN-LocNet/checkpoints/fasterrcnn_06251112_0.8621064178906466"
 
     caffe_pretrain = False # use caffe pretrained model instead of torchvision
     caffe_pretrain_path = 'checkpoints/vgg16-caffe.pth'

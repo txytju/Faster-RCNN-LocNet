@@ -15,6 +15,8 @@ from utils import array_tool as at
 from utils.vis_tool import visdom_bbox
 from utils.eval_tool import eval_detection_voc
 
+from model.utils.bbox_tools import bbox_iou
+
 
 import resource
 
@@ -189,6 +191,62 @@ def eval_prob_thre(**kwargs):
     print("best_map is ", best_map)
     print("best prob_thre is ", best_prob_thre)
 
+
+def eval_on_question_dataset(iou_thre=0.5):
+    '''
+    Use the best trained model to predict on question dataset and evaluate the percision and accuracy.
+    '''
+    # opt._parse(kwargs)
+
+    testset = TestDataset(opt)
+    test_dataloader = data_.DataLoader(testset,
+                                       batch_size=1,
+                                       num_workers=opt.test_num_workers,
+                                       shuffle=False, 
+                                       pin_memory=True)
+
+    test_num = len(test_dataloader) # use all data in testset to caculate metrics
+
+    # model and trainer
+    faster_rcnn = FasterRCNNVGG16()
+    print('model construct completed')
+
+    trainer = FasterRCNNTrainer(faster_rcnn).cuda()
+
+    if opt.load_path:
+        trainer.load(opt.load_path)
+        print('load pretrained model from %s' % opt.load_path)
+    
+    for prob_thre in np.linspace(0.3,0.9,7):
+
+        num_TP = 0
+        num_FP = 0
+        num_GTBB = 0
+        
+        # get predicted anchor boxes and GTBBs
+        for ii, (imgs, sizes, gt_bboxes_, _, _) in tqdm(enumerate(test_dataloader)):
+            
+            sizes = [sizes[0][0], sizes[1][0]]
+            pred_bboxes_, _, _ = faster_rcnn.predict(imgs, [sizes], prob_thre=prob_thre) 
+            # pred_bboxes_ and gt_bboxes_ are both in the raw image size.
+            # both like [ymin, xmin, ymax, xmax]
+
+            gt_bboxes = np.squeeze(at.tonumpy(gt_bboxes_), axis=0)
+            pred_bboxes = at.tonumpy(pred_bboxes_[0])
+            
+            ious = bbox_iou(gt_bboxes, pred_bboxes)
+
+            best_iou = np.max(ious, axis=1)
+            tp = best_iou > iou_thre
+            
+            num_TP += sum(tp)
+            num_FP += pred_bboxes.shape[0] - sum(tp)
+            num_GTBB += gt_bboxes.shape[0]
+
+            if ii == test_num: break
+        print("prob_thre = ", prob_thre)
+        print("Percission = ", num_TP / (num_TP + num_FP))
+        print("Accuracy = ", num_TP / num_GTBB)   
 
 
 
