@@ -192,7 +192,7 @@ def eval_prob_thre(**kwargs):
     print("best prob_thre is ", best_prob_thre)
 
 
-def eval_on_question_dataset(iou_thre=0.5):
+def eval_on_question_dataset(iou_thre=0.8):
     '''
     Use the best trained model to predict on question dataset and evaluate the percision and accuracy.
     '''
