@@ -16,9 +16,9 @@ And it has the following features:
 
 This implementation is slightlly different from the original paper:
 
-- Skip pooling is not used here. Informations from conv5_3 layer(the feature map of original Faster R-CNN) is enough for my task, so skip pooling is droped in this repo.
+- Skip pooling is not used here. Informations from conv5_3 layer(the feature map of original Faster R-CNN) is enough for my task, so skip pooling is droped in this repo. What's more, with the advent of new methods like [Feature Pyramid Networks](https://arxiv.org/abs/1612.03144), skip pooling seems to be obsolete :)
 - The RPN net is exactly same as Faster R-CNN, which means onely 3X3 conv is applied, rather than 3X3 and 5X5 conv nets in the original paper.
-- Training strategy. The original paper train the RPN and LocNet alternately, but losses of RPN and LocNet are backproped at the same time.
+- Training strategy. The original paper train the RPN and LocNet alternately, but losses of RPN and LocNet are backproped at the same time in this repo.
 
 **prob_thre** :
 
@@ -31,9 +31,11 @@ This implementation is slightlly different from the original paper:
 
 ### 2.1 Pascal VOC
 
+Training and test set of Pascal VOC 2007 are used in this repo.
+
 #### 2.1.1 mAP
 
-The best prob_thre for Pascal VOC is 0.5. When using prob_thre=0.5, the performance of Loc-Faster-RCNN is listed as follows. So with dataset like Pascal VOC, Loc-Faster-RCNN can not achieve better result than Faster R-CNN.
+The best prob_thre for Pascal VOC is 0.5. When using prob_thre=0.5, the performance of Loc-Faster-RCNN is listed as follows. So with dataset like Pascal VOC, Loc-Faster-RCNN can not achieve better result than Faster R-CNN. However, when apppied to dataset with lots of small and dense objects, Loc-Faster-RCNN is likely to achieve better performance.
 
 | Implementation  |  mAP   |
 | :-------------: | :----: |
@@ -59,13 +61,15 @@ The best prob_thre for Pascal VOC is 0.5. When using prob_thre=0.5, the performa
 
 ICDAR-2011 and ICDAR-2013 are used in training and eveluating.
 
+TBD.
+
 ## 3. Install dependencies
 
 This repo is built basically on [Faster R-CNN](https://github.com/chenyuntc/simple-faster-rcnn-pytorch). You can check this repo to see dependencies.
 
 ## 4. Train
 
-VGG16 train on `trainval` and test on `test` split.
+Compared with Faster R-CNN, Loc-Faster-RCNN is a little bit harder to train. If same initinal learning rate of 1e-3 is applied, the model may not converge after several epoches because px pr py would be nan. So if you encounter the same problem when using Loc-Faster-RCNN on your own dataset, maybe a smaller learning rate of 1e-4 or 1e-5 should work. 
 
 ## Troubleshooting
 
@@ -76,6 +80,7 @@ VGG16 train on `trainval` and test on `test` split.
 - [x] model structure
 - [ ] maybe : skip pooling
 - [ ] Maybe : conv 3X3 and conv 5X5 in RPN
+- [ ] High likely : Feature Pyramid Network as backbone
 
 ## Acknowledgement
 
