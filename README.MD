@@ -25,7 +25,7 @@ This implementation is slightlly different from the original paper:
 - Hyperparameters in Loc-Faster-RCNN are mostly like Faster R-CNN except for **prob_thre**. 
 - prob_thre is the threshold of probability used when predicting the bounding box, if px or py is greater than prob_thre, this row or column is considered to be part of some object.
 - Different detection tasks may have different appropriate prob_thre to achive best performance. If most objects in the detection task are dense blocks, a higher prob_thre may achive better performance. 
-- You can choose your own prob_thre according to your task characteristics. Use **eval_prob_thre** function in train.py to find out the best prob_thre for your task. Remember to set **load_path** variable to your best model before calling this function.
+- You can choose your own prob_thre according to your task characteristics. Use **eval_prob_thre** function in train.py to find out the best prob_thre for your task. Remember to set **load_path** variable in the **utils/config.py** to your best model before calling this function.
 
 ## 2. Performance
 
