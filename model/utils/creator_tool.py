@@ -187,7 +187,8 @@ class AnchorTargetCreator(object):
 
     def __init__(self,
                  n_sample=256,
-                 pos_iou_thresh=0.7, neg_iou_thresh=0.3,
+                 pos_iou_thresh=0.7, 
+                 neg_iou_thresh=0.3,
                  pos_ratio=0.5):
         self.n_sample = n_sample
         self.pos_iou_thresh = pos_iou_thresh

@@ -103,18 +103,14 @@ class RegionProposalNetwork(nn.Module):
         h = F.relu(self.conv1(x))
         
         rpn_locs = self.loc(h)
-
-        # print("x is ", x)
-        # print("h is ", h)
-        # print("rpn_locs is ", rpn_locs)
-
         rpn_locs = rpn_locs.permute(0, 2, 3, 1).contiguous().view(n, -1, 4)   # shape (n, hh*ww*n_anchor, 4)
         
         rpn_scores = self.score(h)
         rpn_scores = rpn_scores.permute(0, 2, 3, 1).contiguous()
+        rpn_scores = rpn_scores.view(n, -1, 2)       # shape (n, hh*ww*n_anchor, 2)
+
         rpn_fg_scores = rpn_scores.view(n, hh, ww, n_anchor, 2)[:, :, :, :, 1].contiguous() # 该anchor是前景的概率
         rpn_fg_scores = rpn_fg_scores.view(n, -1)    # shape (n, hh*ww*n_anchor)
-        rpn_scores = rpn_scores.view(n, -1, 2)       # shape (n, hh*ww*n_anchor, 2)
 
         rois = list()
         search_regions = list()
@@ -133,6 +129,7 @@ class RegionProposalNetwork(nn.Module):
         search_regions = np.concatenate(search_regions, axis=0)  # shape (num_rois, 4)
         roi_indices = np.concatenate(roi_indices, axis=0)   # shape (num_rois,)
         return rpn_locs, rpn_scores, rois, search_regions, roi_indices, anchor
+
 
 
 def _enumerate_shifted_anchor(anchor_base, feat_stride, height, width):
