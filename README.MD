@@ -81,6 +81,7 @@ Compared with Faster R-CNN, Loc-Faster-RCNN is a little bit harder to train. If 
 - [ ] maybe : skip pooling
 - [ ] Maybe : conv 3X3 and conv 5X5 in RPN
 - [ ] High likely : Feature Pyramid Network as backbone
+- [ ] High likely : RoI Align rather than RoI Pooling
 
 ## Acknowledgement
 
